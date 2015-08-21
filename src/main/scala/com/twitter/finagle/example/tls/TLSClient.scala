@@ -1,32 +1,48 @@
 package com.twitter.finagle.example.tls
 
 import com.twitter.finagle.builder.ClientBuilder
+import com.twitter.finagle.thrift.{ThriftClientFramedCodec, ThriftClientRequest}
 import java.net.InetSocketAddress
 import com.twitter.finagle.Service
 import javax.net.ssl.{TrustManagerFactory, KeyManagerFactory, SSLContext}
 import java.security.KeyStore
-import java.io.{InputStream, File, FileInputStream}
+
+import com.twitter.util.Await
+import org.apache.thrift.protocol.TBinaryProtocol
+import thrift.{BeautifulDogRequest, DogBeauty}
+
 /**
  * @author Panos Zhu
  *         Email panos.zhu@gmail.com
  */
 object TLSClient {
   def main(args: Array[String]) {
-    val client: Service[String, String] = ClientBuilder()
-      .codec(StringCodec)
+    val service: Service[ThriftClientRequest, Array[Byte]] = ClientBuilder()
+      .codec(ThriftClientFramedCodec())
       .hosts(new InetSocketAddress(8080))
       .hostConnectionLimit(1)
       .tls(createSslContext)
       .build()
 
+    val client = new DogBeauty.FinagledClient(service, new TBinaryProtocol.Factory())
 
-    client("Hello,How are you?\n") onSuccess {
-      result => println("Received result asynchronously: " + result)
-    } onFailure {
-      error => error.printStackTrace()
-    } ensure {
-      client.close()
-    }
+    val response1 = client.isBreedBeautiful(new BeautifulDogRequest {
+      override def breed: String = "bull-dog"
+
+      override def name: String = "Muffy"
+    })
+
+    val response2 = client.isBreedBeautiful(new BeautifulDogRequest {
+      override def breed: String = "pomeranian"
+
+      override def name: String = "Wuffins"
+    })
+
+    println(Await.result(response1))
+    println(Await.result(response2))
+
+    service.close()
+
   }
 
   private def createSslContext = {
