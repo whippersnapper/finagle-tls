@@ -2,40 +2,32 @@ package com.twitter.finagle.example.tls
 
 import java.security.cert.X509Certificate
 
-import com.twitter.finagle.thrift.ThriftServerFramedCodec
+import com.twitter.finagle.Thrift
+import com.twitter.finagle.ssl.Ssl
 import com.twitter.finagle.transport.Transport
-import com.twitter.util.Future
-import java.net.InetSocketAddress
-import com.twitter.finagle.builder.ServerBuilder
+import com.twitter.util.{Await, Future}
 
-import thrift.DogBeauty.FutureIface
 import thrift.{DogBeauty, BeautifulDogResponse, BeautifulDogRequest}
-import org.apache.thrift.protocol.TBinaryProtocol
 
 object TLSServer {
 
   def main(args: Array[String]) {
 
-    val processor = new FutureIface {
+    val server = Thrift.server
+      .configured(Transport.TLSServerEngine(Some(() => Ssl.server(SslFile.serverCrt, SslFile.serverKey, null, null, null))))
+      .serveIface(":8080", new DogBeauty.FutureIface {
       override def isBreedBeautiful(request: BeautifulDogRequest): Future[BeautifulDogResponse] = {
 
         Future.value(new BeautifulDogResponse {
-          override def name: String = Transport.peerCertificate.get.asInstanceOf[X509Certificate].getSubjectX500Principal.getName
+          override def name: String = request.name // Transport.peerCertificate.get.asInstanceOf[X509Certificate].getSubjectX500Principal.getName
 
           override def beautiful: Boolean = {
             request.breed != "pomeranian"
           }
         })
       }
-    }
-
-    val service = new DogBeauty.FinagledService(processor, new TBinaryProtocol.Factory())
-
-    val server = ServerBuilder()
-      .codec(ThriftServerFramedCodec())
-      .tls(SslFile.serverCrt, SslFile.serverKey)
-      .bindTo(new InetSocketAddress(8080))
-      .name("TLSServer").build(service)
+    })
+    Await.ready(server)
   }
 }
 

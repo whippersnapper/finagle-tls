@@ -1,9 +1,11 @@
 package com.twitter.finagle.example.tls
 
 import com.twitter.finagle.builder.ClientBuilder
+import com.twitter.finagle.ssl.Ssl
 import com.twitter.finagle.thrift.{ThriftClientFramedCodec, ThriftClientRequest}
 import java.net.InetSocketAddress
-import com.twitter.finagle.Service
+import com.twitter.finagle.transport.Transport
+import com.twitter.finagle.{Thrift, Service}
 import javax.net.ssl.{TrustManagerFactory, KeyManagerFactory, SSLContext}
 import java.security.KeyStore
 
@@ -17,14 +19,13 @@ import thrift.{BeautifulDogRequest, DogBeauty}
  */
 object TLSClient {
   def main(args: Array[String]) {
-    val service: Service[ThriftClientRequest, Array[Byte]] = ClientBuilder()
-      .codec(ThriftClientFramedCodec())
-      .hosts(new InetSocketAddress(8080))
-      .hostConnectionLimit(1)
-      .tls(createSslContext)
-      .build()
+    val client = Thrift.client
+      .configured(Transport.TLSClientEngine(Some({
+        case inet: InetSocketAddress => Ssl.client(createSslContext, inet.getHostName, inet.getPort)
+        case _ => Ssl.client(createSslContext)
+      })))
+      .newIface[DogBeauty.FutureIface](":8080")
 
-    val client = new DogBeauty.FinagledClient(service, new TBinaryProtocol.Factory())
 
     val response1 = client.isBreedBeautiful(new BeautifulDogRequest {
       override def breed: String = "bull-dog"
@@ -40,9 +41,6 @@ object TLSClient {
 
     println(Await.result(response1))
     println(Await.result(response2))
-
-    service.close()
-
   }
 
   private def createSslContext = {
