@@ -1,6 +1,9 @@
 package com.twitter.finagle.example.tls
 
+import java.security.cert.X509Certificate
+
 import com.twitter.finagle.thrift.ThriftServerFramedCodec
+import com.twitter.finagle.transport.Transport
 import com.twitter.util.Future
 import java.net.InetSocketAddress
 import com.twitter.finagle.builder.ServerBuilder
@@ -15,8 +18,9 @@ object TLSServer {
 
     val processor = new FutureIface {
       override def isBreedBeautiful(request: BeautifulDogRequest): Future[BeautifulDogResponse] = {
+
         Future.value(new BeautifulDogResponse {
-          override def name: String = request.name
+          override def name: String = Transport.peerCertificate.get.asInstanceOf[X509Certificate].getSubjectX500Principal.getName
 
           override def beautiful: Boolean = {
             request.breed != "pomeranian"
