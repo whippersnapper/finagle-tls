@@ -22,6 +22,7 @@ object TLSServer {
         engine.setNeedClientAuth(true)
         new Engine(engine)
       })))
+      .configured(Transport.TLSServerEngine(Some(() => Ssl.server(SslFile.serverCrt, SslFile.serverKey, SslFile.caCrt, null, null))))
       .withProtocolFactory(new TBinaryProtocol.Factory())
       .serveIface(":8080", new DogBeauty.FutureIface {
       override def isBreedBeautiful(request: BeautifulDogRequest): Future[BeautifulDogResponse] = {

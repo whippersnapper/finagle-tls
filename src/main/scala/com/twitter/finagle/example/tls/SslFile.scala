@@ -22,6 +22,13 @@ object SslFile {
     serverKeyPath
   }
 
+  val caCrt = {
+    val caCrt = "/ssl/test/ca.crt"
+    val caCrtPath = sslFileDir + caCrt
+    CopyFile.copy(this.getClass.getResourceAsStream(caCrt), caCrtPath)
+    caCrtPath
+  }
+
   val keyStoreStream = this.getClass.getResourceAsStream("/ssl/test/keystore.jks")
 
   val trustKeyStoreStream = this.getClass.getResourceAsStream("/ssl/test/keystore.jks")
