@@ -22,9 +22,9 @@ object SslFile {
     serverKeyPath
   }
 
-  val keyStoreStream = this.getClass.getResourceAsStream("/ssl/test/tclient.keystore")
+  val keyStoreStream = this.getClass.getResourceAsStream("/ssl/test/keystore.jks")
 
-  val trustKeyStoreStream = this.getClass.getResourceAsStream("/ssl/test/tclient.keystore")
+  val trustKeyStoreStream = this.getClass.getResourceAsStream("/ssl/test/keystore.jks")
 
   val clientPassword = "changeit"
 
