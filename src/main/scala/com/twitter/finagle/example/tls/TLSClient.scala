@@ -43,7 +43,7 @@ object TLSClient {
     println(Await.result(response2))
   }
 
-  private def createSslContext = {
+  private lazy val createSslContext = {
     val keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
     val trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
     val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
