@@ -10,7 +10,6 @@ import javax.net.ssl.{TrustManagerFactory, KeyManagerFactory, SSLContext}
 import java.security.KeyStore
 
 import com.twitter.util.Await
-import org.apache.thrift.protocol.TBinaryProtocol
 import thrift.{BeautifulDogRequest, DogBeauty}
 
 /**

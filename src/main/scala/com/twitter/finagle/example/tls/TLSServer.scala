@@ -8,7 +8,6 @@ import com.twitter.finagle.Thrift
 import com.twitter.finagle.ssl.{Engine, Ssl}
 import com.twitter.finagle.transport.Transport
 import com.twitter.util.{Await, Future}
-import org.apache.thrift.protocol.TBinaryProtocol
 
 import thrift.{DogBeauty, BeautifulDogResponse, BeautifulDogRequest}
 
@@ -22,8 +21,6 @@ object TLSServer {
         engine.setNeedClientAuth(true)
         new Engine(engine)
       })))
-      //.configured(Transport.TLSServerEngine(Some(() => Ssl.server(SslFile.serverCrt, SslFile.serverKey, SslFile.caCrt, null, null))))
-      .withProtocolFactory(new TBinaryProtocol.Factory())
       .serveIface(":8080", new DogBeauty.FutureIface {
       override def isBreedBeautiful(request: BeautifulDogRequest): Future[BeautifulDogResponse] = {
 
