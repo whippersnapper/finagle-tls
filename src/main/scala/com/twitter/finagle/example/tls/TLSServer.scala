@@ -25,7 +25,7 @@ object TLSServer {
       override def isBreedBeautiful(request: BeautifulDogRequest): Future[BeautifulDogResponse] = {
 
         Future.value(new BeautifulDogResponse {
-          override def name: String = request.name // Transport.peerCertificate.get.asInstanceOf[X509Certificate].getSubjectX500Principal.getName
+          override def name: String = Transport.peerCertificate.get.asInstanceOf[X509Certificate].getSubjectX500Principal.getName
 
           override def beautiful: Boolean = {
             request.breed != "pomeranian"
