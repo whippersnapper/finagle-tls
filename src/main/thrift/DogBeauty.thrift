@@ -11,5 +11,5 @@ struct BeautifulDogResponse {
 }
 
 service DogBeauty {
-    BeautifulDogResponse isBreedBeautiful(1: BeautifulDogRequest request)
-}
+     BeautifulDogResponse isBreedBeautiful(1: BeautifulDogRequest request)
+ }

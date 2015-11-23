@@ -4,14 +4,17 @@ import java.security.KeyStore
 import java.security.cert.X509Certificate
 import javax.net.ssl.{SSLContext, TrustManagerFactory, KeyManagerFactory, SSLEngine}
 
+import com.twitter.finagle.{Service}
+
 import com.twitter.finagle.thrift.ThriftServerFramedCodec
 import com.twitter.finagle.transport.Transport
 import com.twitter.util.Future
 import java.net.InetSocketAddress
 import com.twitter.finagle.builder.ServerBuilder
+import gov.ic.cte.server.thrift.Hello.{FinagledService, FutureIface}
+import org.apache.thrift.protocol.TBinaryProtocol.Factory
 
-import thrift.DogBeauty.FutureIface
-import thrift.{DogBeauty, BeautifulDogResponse, BeautifulDogRequest}
+
 import org.apache.thrift.protocol.TBinaryProtocol
 
 object TLSServer {
@@ -19,30 +22,25 @@ object TLSServer {
   def main(args: Array[String]) {
 
     val processor = new FutureIface {
-      override def isBreedBeautiful(request: BeautifulDogRequest): Future[BeautifulDogResponse] = {
-
-        Future.value(new BeautifulDogResponse {
-          override def name: String = Transport.peerCertificate.get.asInstanceOf[X509Certificate].getSubjectX500Principal.getName
-
-          override def beautiful: Boolean = {
-            request.breed != "pomeranian"
-          }
-        })
+      override def hi(): Future[String] = {
+        Future.value(Transport.peerCertificate.get.asInstanceOf[X509Certificate].getSubjectDN.getName)
       }
     }
 
-    val service = new DogBeauty.FinagledService(processor, new TBinaryProtocol.Factory())
+    val service = new FinagledService(processor, new Factory())
+    val filters = Seq(new TestFilterA, new TestFilterB)
+    val filteredService = filters.foldRight(service: Service[Array[Byte], Array[Byte]] )(_ andThen _)
 
     val server = ServerBuilder()
       .codec(ThriftServerFramedCodec())
-      //.tls(SslFile.serverCrt, SslFile.serverKey)
       .newSslEngine(() => {
-         val engine: SSLEngine = createSslContext.createSSLEngine()
-         engine.setNeedClientAuth(true)
-         engine
-       })
+        val engine: SSLEngine = createSslContext.createSSLEngine()
+        engine.setNeedClientAuth(true)
+        engine
+      })
       .bindTo(new InetSocketAddress(8080))
-      .name("TLSServer").build(service)
+      .name("TLSServer").build(filteredService)
+
   }
 
   private lazy val createSslContext = {
